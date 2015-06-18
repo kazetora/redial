@@ -100,7 +100,7 @@ class ClientWatcher:
         
 
 if __name__ == "__main__":
-    cw = ClientWatcher("4JbCfm9S", "192.168.110.131", 3000)
+    cw = ClientWatcher("V1ZpVN7U", "192.168.110.131", 3000)
     while True:
         cw.updateClientInfo()
         time.sleep(1)

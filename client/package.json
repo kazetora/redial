@@ -1,0 +1,24 @@
+{
+  "name": "client-watcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kazetora/redial.git"
+  },
+  "author": "Pratama Putra (putra@nakao-lab.org)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kazetora/redial/issues"
+  },
+  "homepage": "https://github.com/kazetora/redial#readme",
+  "dependencies": {
+      "socket.io-client": "*",
+      "node-rest-client": "*",
+      "config": "*"
+  }
+}
