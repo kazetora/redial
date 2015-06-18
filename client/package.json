@@ -19,6 +19,7 @@
   "dependencies": {
       "socket.io-client": "*",
       "node-rest-client": "*",
+      "cluster": "*",
       "config": "*"
   }
 }

@@ -22,6 +22,7 @@ ClientWatcher.prototype.init = function() {
 
 ClientWatcher.prototype.connectSocket = function() {
     var _self = this;
+    _self.socket = null;
     var socketOptions = {
         "secure": true,
         "transports": [ "websocket" ],
@@ -30,7 +31,12 @@ ClientWatcher.prototype.connectSocket = function() {
         "force new connection": true,
         "connect timeout": 10000
     };
-    _self.socket = io.connect(_self.WS_SERVER, socketOptions);//("http://"+_self.server_addr+":"+_self.server_port);
+
+    try {
+       _self.socket = io.connect(_self.WS_SERVER, socketOptions);//("http://"+_self.server_addr+":"+_self.server_port);
+    } catch (ex) {
+       _self.reconnectSocket();
+    }
     //_self.socket = io.connect("ws://localhost:12345", socketOptions);
 
     _self.socket.on("connect", function() {
@@ -64,7 +70,8 @@ ClientWatcher.prototype.connectSocket = function() {
 
 ClientWatcher.prototype.reconnectSocket = function() {
     var _self = this;
-    _self.socket.removeAllListeners();
+    if(_self.socket)
+        _self.socket.removeAllListeners();
     console.log(_self.WS_SERVER);
     setTimeout(_self.connectSocket.bind(_self), 3000);
 }
@@ -116,7 +123,6 @@ ClientWatcher.prototype.checkConnection2 = function(force) {
     }
     else {
         if(force || _self.dialing || reqNotif){
-            _self.dialing = false;
             _self.updateNodeInfo(ppp0_addr);
         }
     }
@@ -136,18 +142,24 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
         }
     };
     
-    client.registerMethod("updateNodeInfo", _self.API_SERVER + "nodes/updateNodeIP", "POST");
-    client.methods.updateNodeInfo(args, function (data, response) {
-        //console.dir(data);
-        //console.log(response);
-        if(_self.socketConnected) {
-            _self.reqNotif = false;
-            _self.socket.emit("update_complete");
-        }
-        else {
-            _self.reqNotif = true;
-        }
-    });
+    try {
+        client.registerMethod("updateNodeInfo", _self.API_SERVER + "nodes/updateNodeIP", "POST");
+        client.methods.updateNodeInfo(args, function (data, response) {
+            //console.dir(data);
+            //console.log(response);
+            if(_self.socketConnected) {
+                _self.reqNotif = false;
+                _self.dialing = false;
+                _self.socket.emit("update_complete");
+            }
+            else {
+                console.log("Exception caught. Require notification later");
+                _self.reqNotif = true;
+            }
+        });
+     } catch (ex){
+         _self.reqNotif = true;
+     }
 };
 
 module.exports = ClientWatcher;
