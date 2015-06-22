@@ -42,6 +42,7 @@ ClientWatcher.prototype.connectSocket = function() {
     _self.socket.on("connect", function() {
         console.log("Connected");
         _self.socketConnected = true;
+        _self.checkConnection(true);
         //socket.emit("update_complete");
         //socket.on("update_received", function(){
         //    console.log("update received");
