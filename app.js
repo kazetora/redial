@@ -22,7 +22,7 @@ if (cluster.isMaster) {
 }
 
 else {
-    var ClientWatcher = require('./clientWatcher.js');
+    var ClientWatcher = require('./client/clientWatcher.js');
     
     var client_watcher = new ClientWatcher(nodeconf.node_id, server, port);
     
