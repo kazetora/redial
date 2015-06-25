@@ -24,7 +24,8 @@ if (cluster.isMaster) {
 else {
     var ClientWatcher = require('./client/clientWatcher.js');
     
-    var client_watcher = new ClientWatcher(nodeconf.node_id, server, port);
+    //var client_watcher = new ClientWatcher(nodeconf.node_id, server, port);
+    var client_watcher = new ClientWatcher(nodeconf.name, server, port);
     
     var interval = 3000;
     
