@@ -8,3 +8,5 @@ sudo cp init.d/node-app /etc/init.d/node-app
 sudo update-rc.d node-app defaults
 sudo service node-app start
 ```
+## Author
+Pratama Putra  putra@nakao-lab.org
