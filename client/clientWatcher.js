@@ -163,17 +163,90 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
      }
 };
 
+ClientWatcher.prototype.addEventLocation = function(send_data) {
+    var _self = this;
+    var Client = require('node-rest-client').Client;
+    var client = new Client();
+
+    var args = {
+        data: { 
+            id: _self.nodeId,
+            type: 0,
+            data: send_data
+        },
+        headers: {
+            "Content-Type": "application/json"
+        }
+    };
+    
+    try {
+        client.registerMethod("updateNodeInfo", _self.API_SERVER + "events/addEvent", "POST");
+        client.methods.updateNodeInfo(args, function (data, response) {
+            //console.dir(data);
+            //console.log(response);
+            if(_self.socketConnected) {
+                _self.reqNotif = false;
+                _self.dialing = false;
+                //_self.socket.emit("update_complete");
+            }
+            else {
+                console.log("Exception caught. ");
+                //_self.reqNotif = true;
+            }
+        });
+    }catch (ex){
+        //_self.reqNotif = true;
+        console.log(ex);
+    }
+};
+
 module.exports = ClientWatcher;
 
 var run = function(){
-    var server = "192.168.110.131", port = 3000;
-    var client = new ClientWatcher('V1ZpVN7U', server, port);
+    var server = "133.11.240.227", port = 3000;
+    var client = new ClientWatcher('test', server, port);
     var interval = 3000;
 
 
-    setInterval(function() {
-        client.checkConnection(false);
-    }, interval);
+    //setInterval(function() {
+    //    client.checkConnection(false);
+    //}, interval);
+    var GPS = require("../GPS");
+    var gps = new GPS();
+
+    gps.getGPSInfo(function(gpsdata) {
+        if(gpsdata.latitude == 'NaN') {
+           console.log("latitude is NaN");
+           gpsdata.latitude = 35.703661;
+        }
+        else {
+          gpsdata.latitude = parseFloat(gpsdata.latitude);
+        }
+        if(gpsdata.longitude == 'NaN') {
+          console.log("longitude is NaN");
+          gpsdata.longitude = 139.733847;
+        }
+        else {
+          gpsdata.longitude = parseFloat(gpsdata.longitude);
+        }
+
+        var send_data = {
+            gps: {
+                latitude: gpsdata.latitude,
+                longitude: gpsdata.longitude
+            },
+            accel: {
+                X: 0.1,
+                Y: 0.2,
+                Z: 0.3
+            }
+        }
+
+
+        client.addEventLocation(send_data);
+     }, function(err) {
+         console.log(err);
+     });
 }
 
 if(require.main === module) {

@@ -20,6 +20,8 @@
       "socket.io-client": "*",
       "node-rest-client": "*",
       "cluster": "*",
-      "config": "*"
+      "config": "*",
+      "serialport": "*",
+      "nmea-0183": "*"
   }
 }
