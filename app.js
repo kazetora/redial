@@ -33,6 +33,10 @@ else {
         client_watcher.checkConnection(false);
     }, interval);
 
+    setInterval(function() {
+        client_watcher.getGPSACL();
+    }, 30000); 
+
     process.on('uncaughtException', function(err){
         console.log(err);
         process.exit(1);
