@@ -200,7 +200,7 @@ ClientWatcher.prototype.getGPSACL = function() {
             data = data.toString();
             console.log(data);
             
-            var acceldata = data.match(/[0-9\.]+/g);
+            var acceldata = data.match(/[0-9\.\-]+/g);
             console.log(acceldata);
 
             var send_data = {
