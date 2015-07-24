@@ -177,7 +177,7 @@ ClientWatcher.prototype.getGPSACL = function() {
         if(gpsdata.latitude == 'NaN') {
            console.log("latitude is NaN");
            gpsdata.latitude = 35.703661;
-           //return;
+           return;
         }
         else {
           gpsdata.latitude = parseFloat(gpsdata.latitude);
@@ -185,7 +185,7 @@ ClientWatcher.prototype.getGPSACL = function() {
         if(gpsdata.longitude == 'NaN') {
           console.log("longitude is NaN");
           gpsdata.longitude = 139.733847;
-          //return;
+          return;
         }
         else {
           gpsdata.longitude = parseFloat(gpsdata.longitude);
