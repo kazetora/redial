@@ -229,10 +229,11 @@ ClientWatcher.prototype.getGPSACL = function() {
 };
 
 ClientWatcher.prototype.addEventLocation = function() {
+
+    var _self = this;
     if(_self.GPS_ACL.length == 0) {
       return;
     }
-    var _self = this;
     var Client = require('node-rest-client').Client;
     var client = new Client();
 
