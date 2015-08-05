@@ -23,19 +23,19 @@ if (cluster.isMaster) {
 
 else {
     var ClientWatcher = require('./client/clientWatcher.js');
-    
+
     //var client_watcher = new ClientWatcher(nodeconf.node_id, server, port);
     var client_watcher = new ClientWatcher(nodeconf.name, server, port);
-    
+
     var interval = 3000;
-    
+
     setInterval(function() {
         client_watcher.checkConnection(false);
     }, interval);
 
     setInterval(function() {
         client_watcher.getGPSACL();
-    }, 30000); 
+    }, 1000); 
 
     process.on('uncaughtException', function(err){
         console.log(err);

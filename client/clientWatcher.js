@@ -11,6 +11,7 @@ function ClientWatcher(nodeId, server, port) {
     this.socket = null;
     this.socketConnected = false;
     this.reqNotif = false;
+    this.GPS_ACL = []; // buffer for GPS & ACL data
     this.init();
 }
 
@@ -119,7 +120,7 @@ ClientWatcher.prototype.checkConnection = function(force) {
 
 ClientWatcher.prototype.checkConnection2 = function(force) {
     var _self = this;
-    
+
     var ppp0_addr = _self.getInterfaceAddress('ppp0');
     if (ppp0_addr == null){
         _self.dialing = true;
@@ -139,7 +140,7 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
     var Client = require('node-rest-client').Client;
     var client = new Client();
     var args = {
-        data: { 
+        data: {
             id: _self.nodeId,
             ip: addr
         },
@@ -147,7 +148,7 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
             "Content-Type": "application/json"
         }
     };
-    
+
     try {
         client.registerMethod("updateNodeInfo", _self.API_SERVER + "nodes/updateNodeIP", "POST");
         client.methods.updateNodeInfo(args, function (data, response) {
@@ -176,30 +177,30 @@ ClientWatcher.prototype.getGPSACL = function() {
     gps.getGPSInfo(function(gpsdata) {
         if(gpsdata.latitude == 'NaN') {
            console.log("latitude is NaN");
-           gpsdata.latitude = 35.703661;
-           return;
+           gpsdata.latitude = 0.0;
+           //return;
         }
         else {
           gpsdata.latitude = parseFloat(gpsdata.latitude);
         }
         if(gpsdata.longitude == 'NaN') {
           console.log("longitude is NaN");
-          gpsdata.longitude = 139.733847;
-          return;
+          gpsdata.longitude = 0.0;
+          //return;
         }
         else {
           gpsdata.longitude = parseFloat(gpsdata.longitude);
         }
-        
+
         // accel
         var spawn = require('child_process').spawn,
             accel = spawn('./bin/accel', []);
-        
+
         accel.stdout.on('data', function (data) {
 
             data = data.toString();
             console.log(data);
-            
+
             var acceldata = data.match(/[0-9\.\-]+/g);
             console.log(acceldata);
 
@@ -215,45 +216,44 @@ ClientWatcher.prototype.getGPSACL = function() {
                 }
             }
 
-
-            _self.addEventLocation(send_data);
+            _self.GPS_ACL.push(send_data);
+            //_self.addEventLocation(send_data);
+            if(_self.GPS_ACL.length >= 30) {
+              _self.addEventLocation();
+            }
         });
      }, function(err) {
          console.log(err);
      });
-    
+
 };
 
-ClientWatcher.prototype.addEventLocation = function(send_data) {
+ClientWatcher.prototype.addEventLocation = function() {
+    if(_self.GPS_ACL.length == 0) {
+      return;
+    }
     var _self = this;
     var Client = require('node-rest-client').Client;
     var client = new Client();
 
     var args = {
-        data: { 
+        data: {
             id: _self.nodeId,
             type: 0,
-            data: send_data
+            data: _self.GPS_ACL
         },
         headers: {
             "Content-Type": "application/json"
         }
     };
-    
+
     try {
-        client.registerMethod("updateNodeInfo", _self.API_SERVER + "events/addEvent", "POST");
-        client.methods.updateNodeInfo(args, function (data, response) {
+        client.registerMethod("addEvents", _self.API_SERVER + "events/addEvent", "POST");
+        client.methods.addEvents(args, function (data, response) {
             //console.dir(data);
             //console.log(response);
-            if(_self.socketConnected) {
-                _self.reqNotif = false;
-                _self.dialing = false;
-                //_self.socket.emit("update_complete");
-            }
-            else {
-                console.log("Exception caught. ");
-                //_self.reqNotif = true;
-            }
+            // reset data buffer
+            _self.GPS_ACL = [];
         });
     }catch (ex){
         //_self.reqNotif = true;
@@ -291,16 +291,16 @@ var run = function(){
     //    else {
     //      gpsdata.longitude = parseFloat(gpsdata.longitude);
     //    }
-    //    
+    //
     //    // accel
     //    var spawn = require('child_process').spawn,
     //        accel = spawn('./bin/accel', []);
-    //    
+    //
     //    accel.stdout.on('data', function (data) {
 
     //        data = data.toString();
     //        console.log(data);
-    //        
+    //
     //        var acceldata = data.match(/[0-9\.]+/g);
     //        console.log(acceldata);
 
@@ -327,4 +327,3 @@ var run = function(){
 if(require.main === module) {
     run()
 }
-
