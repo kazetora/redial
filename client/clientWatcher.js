@@ -1,4 +1,6 @@
 require('https').globalAgent.options.rejectUnauthorized = false;
+var ss = require('simple-statistics');
+ss.mixin();
 var io = require("socket.io-client");
 
 function ClientWatcher(nodeId, server, port) {
@@ -174,8 +176,6 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
 
 ClientWatcher.prototype.getGPSACL = function() {
     var _self = this;
-    var GPS = require("../GPS");
-    var gps = new GPS();
 
     // accel
     var spawn = require('child_process').spawn,
@@ -193,9 +193,11 @@ ClientWatcher.prototype.getGPSACL = function() {
         _self.ACL_Y.push(parseFloat(acceldata[1]));
         _self.ACL_Z.push(parseFloat(acceldata[2]));
 
-        if(_self.GPS_ACL.length >= 30) {
+        if(_self.ACL_X.length >= 30) {
 
 
+          var GPS = require("../GPS");
+          var gps = new GPS();
 
           gps.getGPSInfo(function(gpsdata) {
               if(gpsdata.latitude == 'NaN') {

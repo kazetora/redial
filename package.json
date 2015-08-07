@@ -17,12 +17,12 @@
   },
   "homepage": "https://github.com/kazetora/redial#readme",
   "dependencies": {
-      "socket.io-client": "*",
-      "node-rest-client": "*",
-      "cluster": "*",
-      "config": "*",
-      "serialport": "*",
-      "nmea-0183": "*",
-      "simple-statistics": "*"
+    "cluster": "*",
+    "config": "*",
+    "nmea-0183": "*",
+    "node-rest-client": "*",
+    "serialport": "*",
+    "simple-statistics": "^0.9.2",
+    "socket.io-client": "*"
   }
 }
