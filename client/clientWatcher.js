@@ -12,6 +12,9 @@ function ClientWatcher(nodeId, server, port) {
     this.socketConnected = false;
     this.reqNotif = false;
     this.GPS_ACL = []; // buffer for GPS & ACL data
+    this.ACL_X = [];
+    this.ACL_Y = [];
+    this.ACL_Z = [];
     this.init();
 }
 
@@ -174,58 +177,62 @@ ClientWatcher.prototype.getGPSACL = function() {
     var GPS = require("../GPS");
     var gps = new GPS();
 
-    gps.getGPSInfo(function(gpsdata) {
-        if(gpsdata.latitude == 'NaN') {
-           console.log("latitude is NaN");
-           gpsdata.latitude = 0.0;
-           //return;
-        }
-        else {
-          gpsdata.latitude = parseFloat(gpsdata.latitude);
-        }
-        if(gpsdata.longitude == 'NaN') {
-          console.log("longitude is NaN");
-          gpsdata.longitude = 0.0;
-          //return;
-        }
-        else {
-          gpsdata.longitude = parseFloat(gpsdata.longitude);
-        }
+    // accel
+    var spawn = require('child_process').spawn,
+        accel = spawn('./bin/accel', []);
 
-        // accel
-        var spawn = require('child_process').spawn,
-            accel = spawn('./bin/accel', []);
+    accel.stdout.on('data', function (data) {
 
-        accel.stdout.on('data', function (data) {
+        data = data.toString();
+        //console.log(data);
 
-            data = data.toString();
-            console.log(data);
+        var acceldata = data.match(/[0-9\.\-]+/g);
+        //console.log(acceldata);
 
-            var acceldata = data.match(/[0-9\.\-]+/g);
-            console.log(acceldata);
+        _self.ACL_X.push(parseFloat(acceldata[0]));
+        _self.ACL_Y.push(parseFloat(acceldata[1]));
+        _self.ACL_Z.push(parseFloat(acceldata[2]));
 
-            var send_data = {
-                gps: {
-                    latitude: gpsdata.latitude,
-                    longitude: gpsdata.longitude
-                },
-                accel: {
-                    X: parseFloat(acceldata[0]),
-                    Y: parseFloat(acceldata[1]),
-                    Z: parseFloat(acceldata[2])
-                }
-            }
+        if(_self.GPS_ACL.length >= 30) {
 
-            _self.GPS_ACL.push(send_data);
-            //_self.addEventLocation(send_data);
-            if(_self.GPS_ACL.length >= 30) {
-              _self.addEventLocation();
-            }
+
+
+          gps.getGPSInfo(function(gpsdata) {
+              if(gpsdata.latitude == 'NaN') {
+                 console.log("latitude is NaN");
+                 gpsdata.latitude = 0.0;
+                 //return;
+              }
+              else {
+                gpsdata.latitude = parseFloat(gpsdata.latitude);
+              }
+              if(gpsdata.longitude == 'NaN') {
+                console.log("longitude is NaN");
+                gpsdata.longitude = 0.0;
+                //return;
+              }
+              else {
+                gpsdata.longitude = parseFloat(gpsdata.longitude);
+              }
+              var send_data = {
+                  gps: {
+                      latitude: gpsdata.latitude,
+                      longitude: gpsdata.longitude
+                  },
+                  accel: {
+                      X: _self.ACL_X.mean(),
+                      Y: _self.ACL_Y.mean(),
+                      Z: _self.ACL_Z.mean()
+                  }
+              }
+              console.log(send_data);
+              _self.GPS_ACL.push(send_data);
+              _self.addEventLocation(send_data);
+        }, function(err) {
+            console.log(err);
         });
-     }, function(err) {
-         console.log(err);
-     });
-
+      }
+    });
 };
 
 ClientWatcher.prototype.addEventLocation = function() {
@@ -255,6 +262,9 @@ ClientWatcher.prototype.addEventLocation = function() {
             //console.log(response);
             // reset data buffer
             _self.GPS_ACL = [];
+            _self.ACL_X = [];
+            _self.ACL_Y = [];
+            _self.ACL_Z = [];
         });
     }catch (ex){
         //_self.reqNotif = true;
