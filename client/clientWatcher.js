@@ -19,6 +19,7 @@ function ClientWatcher(nodeId, server, port) {
     this.ACL_Z = [];
     this.GPSTrackingStart = false;
     this.GPSTrackingInterval = null;
+this.cnt = 0;
     this.init();
 }
 
@@ -76,9 +77,19 @@ ClientWatcher.prototype.connectSocket = function() {
         _self.reconnectSocket();
     });
 
-    _self.socket.on('gps_tracking_start', _self.startGPSTracking);
+    _self.socket.on('gps_tracking_start', function(){ 
+        if(!_self.GPSTrackingStart) {
+            console.log("start gps tracking");
+            _self.startGPSTracking();
+        }
+    });
 
-    _self.socket.on('gps_tracking_stop', _self.stopGPSTracking);
+    _self.socket.on('gps_tracking_stop', function() {
+        if(_self.GPSTrackingStart) {
+            console.log("stop gps tracking");
+            _self.stopGPSTracking();
+        }
+    });
     //_self.socket.on('gps_acl', function() {
     //    console.log("check in GPS/ACL data");
     //    _self.getGPSACL();
@@ -242,16 +253,23 @@ ClientWatcher.prototype.getGPSACL = function() {
     });
 };
 
-ClientWatcher.prototype.startGPSTracking() = function() {
+ClientWatcher.prototype.startGPSTracking = function() {
     var _self = this;
+    _self.GPSTrackingStart = true;
     _self.GPSTrackingInterval = setInterval(function(){
       var GPS = require("../GPS");
       var gps = new GPS();
-
+//var dummygps = [
+//    {lat: 35.709153, lng: 139.763619},
+//    {lat: 35.709263, lng: 139.763729},
+//    {lat: 35.709373, lng: 139.763839},
+//    {lat: 35.709483, lng: 139.763949},
+//    {lat: 35.709593, lng: 139.764059}
+//];
       gps.getGPSInfo(function(gpsdata) {
           if(gpsdata.latitude == 'NaN') {
              console.log("latitude is NaN");
-             //gpsdata.latitude = 0.0;
+             //gpsdata.latitude = dummygps[_self.cnt % 5].lat;
              return;
           }
           else {
@@ -259,12 +277,13 @@ ClientWatcher.prototype.startGPSTracking() = function() {
           }
           if(gpsdata.longitude == 'NaN') {
             console.log("longitude is NaN");
-            //gpsdata.longitude = 0.0;
+            //gpsdata.longitude = dummygps[_self.cnt % 5].lng;
             return;
           }
           else {
             gpsdata.longitude = parseFloat(gpsdata.longitude);
           }
+_self.cnt++;
           var data = {
             id: _self.nodeId,
             lng: gpsdata.longitude,
@@ -272,12 +291,14 @@ ClientWatcher.prototype.startGPSTracking() = function() {
           }
 
           if(_self.socketConnected) {
+            console.log("sending gps data");
             _self.socket.emit("gps_trace", data);
           }
+      });
     }, 5000);
 }
 
-ClientWatcher.prototype.stopGPSTracking() = function() {
+ClientWatcher.prototype.stopGPSTracking = function() {
     var _self = this;
     _self.GPSTrackingStart = false;
     clearInterval(_self.GPSTrackingInterval);
