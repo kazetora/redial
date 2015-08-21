@@ -17,6 +17,8 @@ function ClientWatcher(nodeId, server, port) {
     this.ACL_X = [];
     this.ACL_Y = [];
     this.ACL_Z = [];
+    this.GPSTrackingStart = false;
+    this.GPSTrackingInterval = null;
     this.init();
 }
 
@@ -74,6 +76,9 @@ ClientWatcher.prototype.connectSocket = function() {
         _self.reconnectSocket();
     });
 
+    _self.socket.on('gps_tracking_start', _self.startGPSTracking);
+
+    _self.socket.on('gps_tracking_stop', _self.stopGPSTracking);
     //_self.socket.on('gps_acl', function() {
     //    console.log("check in GPS/ACL data");
     //    _self.getGPSACL();
@@ -178,10 +183,10 @@ ClientWatcher.prototype.getGPSACL = function() {
     var _self = this;
 
     // accel
-    var spawn = require('child_process').spawn,
-        accel = spawn('./bin/accel', []);
+    var spawn = require('child_process').spawn;
+    var accel = spawn('./bin/accel', []);
 
-    accel.stdout.on('data', function (data) {
+    accel.stdout.on('data', function(data){
 
         data = data.toString();
         //console.log(data);
@@ -237,6 +242,47 @@ ClientWatcher.prototype.getGPSACL = function() {
     });
 };
 
+ClientWatcher.prototype.startGPSTracking() = function() {
+    var _self = this;
+    _self.GPSTrackingInterval = setInterval(function(){
+      var GPS = require("../GPS");
+      var gps = new GPS();
+
+      gps.getGPSInfo(function(gpsdata) {
+          if(gpsdata.latitude == 'NaN') {
+             console.log("latitude is NaN");
+             //gpsdata.latitude = 0.0;
+             return;
+          }
+          else {
+            gpsdata.latitude = parseFloat(gpsdata.latitude);
+          }
+          if(gpsdata.longitude == 'NaN') {
+            console.log("longitude is NaN");
+            //gpsdata.longitude = 0.0;
+            return;
+          }
+          else {
+            gpsdata.longitude = parseFloat(gpsdata.longitude);
+          }
+          var data = {
+            id: _self.nodeId,
+            lng: gpsdata.longitude,
+            lat: gpsdata.latitude
+          }
+
+          if(_self.socketConnected) {
+            _self.socket.emit("gps_trace", data);
+          }
+    }, 5000);
+}
+
+ClientWatcher.prototype.stopGPSTracking() = function() {
+    var _self = this;
+    _self.GPSTrackingStart = false;
+    clearInterval(_self.GPSTrackingInterval);
+}
+
 ClientWatcher.prototype.addEventLocation = function() {
 
     var _self = this;
@@ -282,61 +328,8 @@ var run = function(){
     var interval = 3000;
 
     client.getGPSACL();
-
-    //setInterval(function() {
-    //    client.checkConnection(false);
-    //}, interval);
-    //var GPS = require("../GPS");
-    //var gps = new GPS();
-
-    //gps.getGPSInfo(function(gpsdata) {
-    //    if(gpsdata.latitude == 'NaN') {
-    //       console.log("latitude is NaN");
-    //       gpsdata.latitude = 35.703661;
-    //    }
-    //    else {
-    //      gpsdata.latitude = parseFloat(gpsdata.latitude);
-    //    }
-    //    if(gpsdata.longitude == 'NaN') {
-    //      console.log("longitude is NaN");
-    //      gpsdata.longitude = 139.733847;
-    //    }
-    //    else {
-    //      gpsdata.longitude = parseFloat(gpsdata.longitude);
-    //    }
-    //
-    //    // accel
-    //    var spawn = require('child_process').spawn,
-    //        accel = spawn('./bin/accel', []);
-    //
-    //    accel.stdout.on('data', function (data) {
-
-    //        data = data.toString();
-    //        console.log(data);
-    //
-    //        var acceldata = data.match(/[0-9\.]+/g);
-    //        console.log(acceldata);
-
-    //        var send_data = {
-    //            gps: {
-    //                latitude: gpsdata.latitude,
-    //                longitude: gpsdata.longitude
-    //            },
-    //            accel: {
-    //                X: parseFloat(acceldata[0]),
-    //                Y: parseFloat(acceldata[1]),
-    //                Z: parseFloat(acceldata[2])
-    //            }
-    //        }
-
-
-    //        client.addEventLocation(send_data);
-    //    });
-    // }, function(err) {
-    //     console.log(err);
-    // });
 }
 
 if(require.main === module) {
-    run()
+    run();
 }
