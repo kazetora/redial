@@ -22,7 +22,6 @@ GPS.prototype.init = function(params) {
 GPS.prototype.getGPSInfo = function(onSuccess, onErr) {
   var _self = this;
   var com = require("serialport");
-  var nmea = require("nmea-0183");
 
   var serialPort = new com.SerialPort(_self.serial_port, {
     baudrate: parseInt(_self.serial_baudrate),
@@ -35,7 +34,10 @@ GPS.prototype.getGPSInfo = function(onSuccess, onErr) {
 
   serialPort.on('data', function(data) {
     try{
+      //console.log("Data ready");
+      var nmea = require("nmea-0183");
       var gps = nmea.parse(data);
+      console.dir(gps);
       if(gps['id'] == 'GPRMC') {
         console.log('GPRMC');
         //console.log(gps);

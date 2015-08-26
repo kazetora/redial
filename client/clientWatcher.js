@@ -17,6 +17,9 @@ function ClientWatcher(nodeId, server, port) {
     this.ACL_X = [];
     this.ACL_Y = [];
     this.ACL_Z = [];
+    this.GPSTrackingStart = false;
+    this.GPSTrackingInterval = null;
+this.cnt = 0;
     this.init();
 }
 
@@ -74,6 +77,19 @@ ClientWatcher.prototype.connectSocket = function() {
         _self.reconnectSocket();
     });
 
+    _self.socket.on('gps_tracking_start', function(){ 
+        if(!_self.GPSTrackingStart) {
+            console.log("start gps tracking");
+            _self.startGPSTracking();
+        }
+    });
+
+    _self.socket.on('gps_tracking_stop', function() {
+        if(_self.GPSTrackingStart) {
+            console.log("stop gps tracking");
+            _self.stopGPSTracking();
+        }
+    });
     //_self.socket.on('gps_acl', function() {
     //    console.log("check in GPS/ACL data");
     //    _self.getGPSACL();
@@ -178,10 +194,10 @@ ClientWatcher.prototype.getGPSACL = function() {
     var _self = this;
 
     // accel
-    var spawn = require('child_process').spawn,
-        accel = spawn('./bin/accel', []);
+    var spawn = require('child_process').spawn;
+    var accel = spawn('./bin/accel', []);
 
-    accel.stdout.on('data', function (data) {
+    accel.stdout.on('data', function(data){
 
         data = data.toString();
         //console.log(data);
@@ -237,6 +253,63 @@ ClientWatcher.prototype.getGPSACL = function() {
     });
 };
 
+ClientWatcher.prototype.startGPSTracking = function() {
+    var _self = this;
+    _self.GPSTrackingStart = true;
+    _self.GPSTrackingInterval = setInterval(_self.updateGPS.bind(_self), 3000);
+    _self.updateGPS();
+}
+
+ClientWatcher.prototype.updateGPS = function(){
+    var _self = this;
+    var GPS = require("../GPS");
+    var gps = new GPS();
+var dummygps = [
+    {lat: 35.709153, lng: 139.763619},
+    {lat: 35.709263, lng: 139.763729},
+    {lat: 35.709373, lng: 139.763839},
+    {lat: 35.709483, lng: 139.763949},
+    {lat: 35.709593, lng: 139.764059}
+];
+    gps.getGPSInfo(function(gpsdata) {
+        if(gpsdata.latitude == 'NaN') {
+           console.log("latitude is NaN");
+           gpsdata.latitude = dummygps[_self.cnt].lat;
+           return;
+        }
+        else {
+          gpsdata.latitude = parseFloat(gpsdata.latitude);
+        }
+        if(gpsdata.longitude == 'NaN') {
+          console.log("longitude is NaN");
+          gpsdata.longitude = dummygps[_self.cnt].lng;
+          return;
+        }
+        else {
+          gpsdata.longitude = parseFloat(gpsdata.longitude);
+        }
+_self.cnt++; _self.cnt %= 5;
+        var data = {
+          id: _self.nodeId,
+          lng: gpsdata.longitude,
+          lat: gpsdata.latitude
+        }
+
+        if(_self.socketConnected) {
+          console.log("sending gps data");
+          _self.socket.emit("gps_trace", data);
+        }
+    }, function(err) {
+       console.log(err);
+    });
+}
+
+ClientWatcher.prototype.stopGPSTracking = function() {
+    var _self = this;
+    _self.GPSTrackingStart = false;
+    clearInterval(_self.GPSTrackingInterval);
+}
+
 ClientWatcher.prototype.addEventLocation = function() {
 
     var _self = this;
@@ -282,61 +355,8 @@ var run = function(){
     var interval = 3000;
 
     client.getGPSACL();
-
-    //setInterval(function() {
-    //    client.checkConnection(false);
-    //}, interval);
-    //var GPS = require("../GPS");
-    //var gps = new GPS();
-
-    //gps.getGPSInfo(function(gpsdata) {
-    //    if(gpsdata.latitude == 'NaN') {
-    //       console.log("latitude is NaN");
-    //       gpsdata.latitude = 35.703661;
-    //    }
-    //    else {
-    //      gpsdata.latitude = parseFloat(gpsdata.latitude);
-    //    }
-    //    if(gpsdata.longitude == 'NaN') {
-    //      console.log("longitude is NaN");
-    //      gpsdata.longitude = 139.733847;
-    //    }
-    //    else {
-    //      gpsdata.longitude = parseFloat(gpsdata.longitude);
-    //    }
-    //
-    //    // accel
-    //    var spawn = require('child_process').spawn,
-    //        accel = spawn('./bin/accel', []);
-    //
-    //    accel.stdout.on('data', function (data) {
-
-    //        data = data.toString();
-    //        console.log(data);
-    //
-    //        var acceldata = data.match(/[0-9\.]+/g);
-    //        console.log(acceldata);
-
-    //        var send_data = {
-    //            gps: {
-    //                latitude: gpsdata.latitude,
-    //                longitude: gpsdata.longitude
-    //            },
-    //            accel: {
-    //                X: parseFloat(acceldata[0]),
-    //                Y: parseFloat(acceldata[1]),
-    //                Z: parseFloat(acceldata[2])
-    //            }
-    //        }
-
-
-    //        client.addEventLocation(send_data);
-    //    });
-    // }, function(err) {
-    //     console.log(err);
-    // });
 }
 
 if(require.main === module) {
-    run()
+    run();
 }
