@@ -17,14 +17,22 @@ function ClientWatcher(nodeId, server, port) {
     this.ACL_X = [];
     this.ACL_Y = [];
     this.ACL_Z = [];
+    this.GYRO_X = [];
+    this.GYRO_Y = [];
+    this.GYRO_Z = [];
     this.GPSTrackingStart = false;
     this.GPSTrackingInterval = null;
 this.cnt = 0;
     this.init();
+    this.hasGyro = false;
 }
 
 ClientWatcher.prototype.init = function() {
     var _self = this;
+    // check if this node has gyro sensor
+    if(_self.nodeId.indexOf("gateway") === 0) {
+      _self.hasGyro = true;
+    }
     _self.connectSocket();
     _self.checkConnection(true);
 };
@@ -77,7 +85,7 @@ ClientWatcher.prototype.connectSocket = function() {
         _self.reconnectSocket();
     });
 
-    _self.socket.on('gps_tracking_start', function(){ 
+    _self.socket.on('gps_tracking_start', function(){
         if(!_self.GPSTrackingStart) {
             console.log("start gps tracking");
             _self.startGPSTracking();
@@ -203,14 +211,13 @@ ClientWatcher.prototype.getGPSACL = function() {
         //console.log(data);
 
         var acceldata = data.match(/[0-9\.\-]+/g);
-        //console.log(acceldata);
+      //console.log(acceldata);
 
         _self.ACL_X.push(parseFloat(acceldata[0]));
         _self.ACL_Y.push(parseFloat(acceldata[1]));
         _self.ACL_Z.push(parseFloat(acceldata[2]));
 
         if(_self.ACL_X.length >= 30) {
-
 
           var GPS = require("../GPS");
           var gps = new GPS();
@@ -241,6 +248,77 @@ ClientWatcher.prototype.getGPSACL = function() {
                       X: _self.ACL_X.mean(),
                       Y: _self.ACL_Y.mean(),
                       Z: _self.ACL_Z.mean()
+                  }
+              }
+              console.log(send_data);
+              _self.GPS_ACL.push(send_data);
+              _self.addEventLocation(send_data);
+        }, function(err) {
+            console.log(err);
+        });
+      }
+    });
+};
+
+ClientWatcher.prototype.getGPSACLGyro = function() {
+    var _self = this;
+
+    // accel
+    var spawn = require('child_process').spawn;
+    var accel = spawn('/usr/bin/python', ['./bin/accel-gyro.py']);
+
+    accel.stdout.on('data', function(data){
+
+        data = data.toString();
+        //console.log(data);
+
+        var aclgyro = JSON.parse(data);
+      //console.log(acceldata);
+
+        _self.ACL_X.push(aclgyro.accel.x);
+        _self.ACL_Y.push(aclgyro.accel.y);
+        _self.ACL_Z.push(aclgyro.accel.z);
+
+        _self.GYRO_X.push(aclgyro.gyro.x);
+        _self.GYRO_Y.push(aclgyro.gyro.y);
+        _self.GYRO_Z.push(aclgyro.gyro.z);
+
+        if(_self.ACL_X.length >= 30) {
+
+          var GPS = require("../GPS");
+          var gps = new GPS();
+
+          gps.getGPSInfo(function(gpsdata) {
+              if(gpsdata.latitude == 'NaN') {
+                 console.log("latitude is NaN");
+                 gpsdata.latitude = 0.0;
+                 //return;
+              }
+              else {
+                gpsdata.latitude = parseFloat(gpsdata.latitude);
+              }
+              if(gpsdata.longitude == 'NaN') {
+                console.log("longitude is NaN");
+                gpsdata.longitude = 0.0;
+                //return;
+              }
+              else {
+                gpsdata.longitude = parseFloat(gpsdata.longitude);
+              }
+              var send_data = {
+                  gps: {
+                      latitude: gpsdata.latitude,
+                      longitude: gpsdata.longitude
+                  },
+                  accel: {
+                      X: _self.ACL_X.mean(),
+                      Y: _self.ACL_Y.mean(),
+                      Z: _self.ACL_Z.mean()
+                  },
+                  gryo : {
+                      X: _self.GYRO_X.mean(),
+                      Y: _self.GYRO_Y.mean(),
+                      Z: _self.GYRO_Z.mean()
                   }
               }
               console.log(send_data);
