@@ -52,6 +52,7 @@ ClientWatcher.prototype.connectSocket = function() {
         console.log("Connected");
         _self.socketConnected = true;
         _self.checkConnection(true);
+        _self.socket.emit("area/fetch");
         //socket.emit("update_complete");
         //socket.on("update_received", function(){
         //    console.log("update received");
@@ -77,7 +78,7 @@ ClientWatcher.prototype.connectSocket = function() {
         _self.reconnectSocket();
     });
 
-    _self.socket.on('gps_tracking_start', function(){ 
+    _self.socket.on('gps_tracking_start', function(){
         if(!_self.GPSTrackingStart) {
             console.log("start gps tracking");
             _self.startGPSTracking();
@@ -94,6 +95,10 @@ ClientWatcher.prototype.connectSocket = function() {
     //    console.log("check in GPS/ACL data");
     //    _self.getGPSACL();
     //});
+    _self.socket.on('area/fetch', function(data){
+      console.log("Fetching area");
+      console.log(data);
+    });
 };
 
 ClientWatcher.prototype.reconnectSocket = function() {
