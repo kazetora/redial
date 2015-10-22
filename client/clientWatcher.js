@@ -20,6 +20,7 @@ function ClientWatcher(nodeId, server, port) {
     this.GPSTrackingStart = false;
     this.GPSTrackingInterval = null;
 this.cnt = 0;
+    this.area = {};
     this.init();
 }
 
@@ -97,7 +98,20 @@ ClientWatcher.prototype.connectSocket = function() {
     //});
     _self.socket.on('area/fetch', function(data){
       console.log("Fetching area");
-      console.log(data);
+      //console.log(data);
+      _self._fetchAreaData(data);
+    });
+
+    _self.socket.on('area/add', function(data){
+      console.log("Add new area");
+      //console.log(data);
+      _self._addNewArea(data);
+    });
+
+    _self.socket.on('area/delete', function(data){
+      console.log("Add new area");
+      //console.log(data);
+      _self._deleteArea(data);
     });
 };
 
@@ -351,6 +365,21 @@ ClientWatcher.prototype.addEventLocation = function() {
         console.log(ex);
     }
 };
+
+ClientWatcher.prototype._fetchAreaData = function(data) {
+  var _self = this;
+  data.forEach(function(element, index, array){
+    _self.areas[element['area_id']] = element;
+  });
+}
+
+ClientWatcher.prototype._addNewArea = function(area) {
+  _self.areas[area['area_id']] = area;
+}
+
+ClientWatcher.prototype._deleteArea = function(area_id) {
+  delete _self.areas[area_id];
+}
 
 module.exports = ClientWatcher;
 
