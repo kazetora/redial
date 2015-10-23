@@ -238,7 +238,7 @@ ClientWatcher.prototype.getGPSACL = function() {
               if(gpsdata.latitude == 'NaN') {
                  console.log("latitude is NaN");
                  gpsdata.latitude = 0.0;
-                 //return;
+                 return;
               }
               else {
                 gpsdata.latitude = parseFloat(gpsdata.latitude);
@@ -246,7 +246,7 @@ ClientWatcher.prototype.getGPSACL = function() {
               if(gpsdata.longitude == 'NaN') {
                 console.log("longitude is NaN");
                 gpsdata.longitude = 0.0;
-                //return;
+                return;
               }
               else {
                 gpsdata.longitude = parseFloat(gpsdata.longitude);
@@ -281,6 +281,7 @@ ClientWatcher.prototype.startGPSTracking = function() {
 }
 
 ClientWatcher.prototype.updateGPS = function(){
+console.log("update gps");
     var _self = this;
     var GPS = require("../GPS");
     var gps = new GPS();
@@ -295,7 +296,7 @@ var dummygps = [
         if(gpsdata.latitude == 'NaN') {
            console.log("latitude is NaN");
            gpsdata.latitude = dummygps[_self.cnt].lat;
-           return;
+           //return;
         }
         else {
           gpsdata.latitude = parseFloat(gpsdata.latitude);
@@ -303,7 +304,7 @@ var dummygps = [
         if(gpsdata.longitude == 'NaN') {
           console.log("longitude is NaN");
           gpsdata.longitude = dummygps[_self.cnt].lng;
-          return;
+          //return;
         }
         else {
           gpsdata.longitude = parseFloat(gpsdata.longitude);
@@ -326,32 +327,33 @@ _self.cnt++; _self.cnt %= 5;
 
         var args = {
             data: {
-                point: [gpsdata.latitude, gpsdata.longitude]
-                area: self.areas
+                point: [gpsdata.latitude, gpsdata.longitude],
+                area: _self.areas
             },
             headers: {
                 "Content-Type": "application/json"
             }
         };
+console.log(args);
 
         try {
-            client.registerMethod("updateActiveArea", _self.geofenceServer + "geofece/updateActiveArea", "POST");
-            client.methods.addEvents(args, function (data, response) {
+            client.registerMethod("updateActiveArea", _self.geofenceServer + "geofence/updateActiveArea", "POST");
+            client.methods.updateActiveArea(args, function (data, response) {
                 console.log(data);
                 //console.log(response);
                 // reset data buffer
-                setTimeout(_self.updateGps.bind(_self), 3000);
+                setTimeout(_self.updateGPS.bind(_self), 3000);
             });
         }catch (ex){
             //_self.reqNotif = true;
             console.log(ex);
-            setTimeout(_self.updateGps.bind(_self), 3000);
+            setTimeout(_self.updateGPS.bind(_self), 3000);
         }
 
 
     }, function(err) {
        console.log(err);
-       setTimeout(_self.updateGps.bind(_self), 3000);
+       setTimeout(_self.updateGPS.bind(_self), 3000);
     });
 }
 
