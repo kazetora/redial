@@ -9,6 +9,7 @@ function ClientWatcher(nodeId, server, port) {
     this.server_port = port;
     this.API_SERVER = "https://" + server +":" + port + "/";
     this.WS_SERVER = "https://" + server +":" + port + "/";
+    this.geofenceServer = "http://localhost:5555/"
     this.dialing = false;
     this.socket = null;
     this.socketConnected = false;
@@ -28,6 +29,7 @@ ClientWatcher.prototype.init = function() {
     var _self = this;
     _self.connectSocket();
     _self.checkConnection(true);
+    setTimeout(_self.updateGPS.bind(_self), 5000);
 };
 
 ClientWatcher.prototype.connectSocket = function() {
@@ -273,8 +275,9 @@ ClientWatcher.prototype.getGPSACL = function() {
 ClientWatcher.prototype.startGPSTracking = function() {
     var _self = this;
     _self.GPSTrackingStart = true;
-    _self.GPSTrackingInterval = setInterval(_self.updateGPS.bind(_self), 3000);
-    _self.updateGPS();
+    //_self.GPSTrackingInterval = setInterval(_self.updateGPS.bind(_self), 3000);
+
+    //_self.updateGPS();
 }
 
 ClientWatcher.prototype.updateGPS = function(){
@@ -312,19 +315,50 @@ _self.cnt++; _self.cnt %= 5;
           lat: gpsdata.latitude
         }
 
-        if(_self.socketConnected) {
+        if(_self.GPSTrackingStart && _self.socketConnected) {
           console.log("sending gps data");
           _self.socket.emit("gps_trace", data);
         }
+
+        // call update active area for geofence
+        var Client = require('node-rest-client').Client;
+        var client = new Client();
+
+        var args = {
+            data: {
+                point: [gpsdata.latitude, gpsdata.longitude]
+                area: self.areas
+            },
+            headers: {
+                "Content-Type": "application/json"
+            }
+        };
+
+        try {
+            client.registerMethod("updateActiveArea", _self.geofenceServer + "geofece/updateActiveArea", "POST");
+            client.methods.addEvents(args, function (data, response) {
+                console.log(data);
+                //console.log(response);
+                // reset data buffer
+                setTimeout(_self.updateGps.bind(_self), 3000);
+            });
+        }catch (ex){
+            //_self.reqNotif = true;
+            console.log(ex);
+            setTimeout(_self.updateGps.bind(_self), 3000);
+        }
+
+
     }, function(err) {
        console.log(err);
+       setTimeout(_self.updateGps.bind(_self), 3000);
     });
 }
 
 ClientWatcher.prototype.stopGPSTracking = function() {
     var _self = this;
     _self.GPSTrackingStart = false;
-    clearInterval(_self.GPSTrackingInterval);
+    //clearInterval(_self.GPSTrackingInterval);
 }
 
 ClientWatcher.prototype.addEventLocation = function() {
