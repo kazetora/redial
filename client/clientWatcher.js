@@ -20,6 +20,7 @@ function ClientWatcher(nodeId, server, port) {
     this.ACL_Z = [];
     this.GPSTrackingStart = false;
     this.GPSTrackingInterval = null;
+    this.geofenceAPIClient = null;
 this.cnt = 0;
     this.areas = {};
     this.init();
@@ -29,6 +30,9 @@ ClientWatcher.prototype.init = function() {
     var _self = this;
     _self.connectSocket();
     _self.checkConnection(true);
+    var APIClient = require('node-rest-client').Client;
+    _self.geofenceAPIClient = new APIClient();
+    _self.geofenceAPIClient.registerMethod("updateActiveArea", _self.geofenceServer + "geofence/updateActiveArea", "POST");
     setTimeout(_self.updateGPS.bind(_self), 5000);
 };
 
@@ -238,7 +242,7 @@ ClientWatcher.prototype.getGPSACL = function() {
               if(gpsdata.latitude == 'NaN') {
                  console.log("latitude is NaN");
                  gpsdata.latitude = 0.0;
-                 return;
+                 //return;
               }
               else {
                 gpsdata.latitude = parseFloat(gpsdata.latitude);
@@ -246,7 +250,7 @@ ClientWatcher.prototype.getGPSACL = function() {
               if(gpsdata.longitude == 'NaN') {
                 console.log("longitude is NaN");
                 gpsdata.longitude = 0.0;
-                return;
+                //return;
               }
               else {
                 gpsdata.longitude = parseFloat(gpsdata.longitude);
@@ -266,7 +270,7 @@ ClientWatcher.prototype.getGPSACL = function() {
               _self.GPS_ACL.push(send_data);
               _self.addEventLocation(send_data);
         }, function(err) {
-            console.log(err);
+            console.log(err.stack);
         });
       }
     });
@@ -294,7 +298,7 @@ var dummygps = [
 ];
     gps.getGPSInfo(function(gpsdata) {
         if(gpsdata.latitude == 'NaN') {
-           console.log("latitude is NaN");
+           console.log("latitude is NaNNNNNN");
            gpsdata.latitude = dummygps[_self.cnt].lat;
            //return;
         }
@@ -322,12 +326,10 @@ _self.cnt++; _self.cnt %= 5;
         }
 
         // call update active area for geofence
-        var Client = require('node-rest-client').Client;
-        var client = new Client();
-
         var args = {
             data: {
                 point: [gpsdata.latitude, gpsdata.longitude],
+                //area: Object.keys(_self.areas).map(function(key){ return _self.areas[key]; })
                 area: _self.areas
             },
             headers: {
@@ -337,8 +339,7 @@ _self.cnt++; _self.cnt %= 5;
 console.log(args);
 
         try {
-            client.registerMethod("updateActiveArea", _self.geofenceServer + "geofence/updateActiveArea", "POST");
-            client.methods.updateActiveArea(args, function (data, response) {
+            _self.geofenceAPIClient.methods.updateActiveArea(args, function (data, response) {
                 console.log(data);
                 //console.log(response);
                 // reset data buffer
@@ -352,7 +353,7 @@ console.log(args);
 
 
     }, function(err) {
-       console.log(err);
+       console.log(err.stack);
        setTimeout(_self.updateGPS.bind(_self), 3000);
     });
 }
