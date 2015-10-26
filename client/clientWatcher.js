@@ -329,8 +329,8 @@ _self.cnt++; _self.cnt %= 5;
         var args = {
             data: {
                 point: [gpsdata.latitude, gpsdata.longitude],
-                //area: Object.keys(_self.areas).map(function(key){ return _self.areas[key]; })
-                area: _self.areas
+                area: Object.keys(_self.areas).map(function(key){ return _self.areas[key]; })
+                //area: _self.areas
             },
             headers: {
                 "Content-Type": "application/json"
