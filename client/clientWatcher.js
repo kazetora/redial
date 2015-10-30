@@ -299,7 +299,8 @@ var dummygps = [
     gps.getGPSInfo(function(gpsdata) {
         if(gpsdata.latitude == 'NaN') {
            console.log("latitude is NaNNNNNN");
-           gpsdata.latitude = dummygps[_self.cnt].lat;
+           //gpsdata.latitude = dummygps[_self.cnt].lat;
+           gpsdata.latitude = 0.0;
            //return;
         }
         else {
@@ -307,7 +308,8 @@ var dummygps = [
         }
         if(gpsdata.longitude == 'NaN') {
           console.log("longitude is NaN");
-          gpsdata.longitude = dummygps[_self.cnt].lng;
+          //gpsdata.longitude = dummygps[_self.cnt].lng;
+          gpsdata.longitude = 0.0;
           //return;
         }
         else {
