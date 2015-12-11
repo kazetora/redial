@@ -160,6 +160,8 @@ ClientWatcher.prototype.checkConnection = function(force) {
             _self.updateNodeInfo(ppp0_addr);
         }
     }
+
+    setTimeout(_self.checkConnection.bind(_self, false), 3000);
 };
 
 ClientWatcher.prototype.checkConnection2 = function(force) {
@@ -269,8 +271,10 @@ ClientWatcher.prototype.getGPSACL = function() {
               console.log(send_data);
               _self.GPS_ACL.push(send_data);
               _self.addEventLocation(send_data);
+              setTimeout(_self.getGPSACL.bind(_self), 1000);
         }, function(err) {
             console.log(err.stack);
+            setTimeout(_self.getGPSACL.bind(_self), 1000);
         });
       }
     });

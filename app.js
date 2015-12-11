@@ -29,13 +29,13 @@ else {
 
     var interval = 3000;
 
-    setInterval(function() {
+    //setInterval(function() {
         client_watcher.checkConnection(false);
-    }, interval);
+    //}, interval);
 
-    setInterval(function() {
+    //setInterval(function() {
         client_watcher.getGPSACL();
-    }, 1000); 
+    //}, 1000);
 
     process.on('uncaughtException', function(err){
         console.log(err);
