@@ -32,12 +32,19 @@ GPS.prototype.getGPSInfo = function(onSuccess, onErr) {
     console.log('serialPort: Port open');
   });
 
+  serialPort.on('close', function(err) {
+    if(err) {
+        console.log(err.stack);
+    }
+    console.log('serialPort: Port close');
+  });
+
   serialPort.on('data', function(data) {
     try{
       //console.log("Data ready");
       var nmea = require("nmea-0183");
       var gps = nmea.parse(data);
-      console.dir(gps);
+      //console.dir(gps);
       if(gps['id'] == 'GPRMC') {
         console.log('GPRMC');
         //console.log(gps);
@@ -46,6 +53,7 @@ GPS.prototype.getGPSInfo = function(onSuccess, onErr) {
       }
     } catch(e) {
       //console.log(e);
+      serialPort.close();
       onErr(e);
     }
   });

@@ -9,6 +9,7 @@ function ClientWatcher(nodeId, server, port) {
     this.server_port = port;
     this.API_SERVER = "https://" + server +":" + port + "/";
     this.WS_SERVER = "https://" + server +":" + port + "/";
+    this.geofenceServer = "http://localhost:5555/"
     this.dialing = false;
     this.socket = null;
     this.socketConnected = false;
@@ -22,7 +23,9 @@ function ClientWatcher(nodeId, server, port) {
     this.GYRO_Z = [];
     this.GPSTrackingStart = false;
     this.GPSTrackingInterval = null;
+    this.geofenceAPIClient = null;
 this.cnt = 0;
+    this.areas = {};
     this.init();
     this.hasGyro = false;
 }
@@ -35,6 +38,10 @@ ClientWatcher.prototype.init = function() {
     }
     _self.connectSocket();
     _self.checkConnection(true);
+    var APIClient = require('node-rest-client').Client;
+    _self.geofenceAPIClient = new APIClient();
+    _self.geofenceAPIClient.registerMethod("updateActiveArea", _self.geofenceServer + "geofence/updateActiveArea", "POST");
+    setTimeout(_self.updateGPS.bind(_self), 5000);
 };
 
 ClientWatcher.prototype.connectSocket = function() {
@@ -60,6 +67,7 @@ ClientWatcher.prototype.connectSocket = function() {
         console.log("Connected");
         _self.socketConnected = true;
         _self.checkConnection(true);
+        _self.socket.emit("area/fetch");
         //socket.emit("update_complete");
         //socket.on("update_received", function(){
         //    console.log("update received");
@@ -102,6 +110,21 @@ ClientWatcher.prototype.connectSocket = function() {
     //    console.log("check in GPS/ACL data");
     //    _self.getGPSACL();
     //});
+    _self.socket.on('area/fetch', function(data){
+      console.log("Fetching area");
+      console.log(data);
+      _self._fetchAreaData(data);
+    });
+
+    _self.socket.on('area/add', function(data){
+      //console.log(data);
+      _self._addNewArea(data);
+    });
+
+    _self.socket.on('area/delete', function(data){
+      //console.log(data);
+      _self._deleteArea(data);
+    });
 };
 
 ClientWatcher.prototype.reconnectSocket = function() {
@@ -325,7 +348,7 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
               _self.GPS_ACL.push(send_data);
               _self.addEventLocation(send_data);
         }, function(err) {
-            console.log(err);
+            console.log(err.stack);
         });
       }
     });
@@ -334,11 +357,13 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
 ClientWatcher.prototype.startGPSTracking = function() {
     var _self = this;
     _self.GPSTrackingStart = true;
-    _self.GPSTrackingInterval = setInterval(_self.updateGPS.bind(_self), 3000);
-    _self.updateGPS();
+    //_self.GPSTrackingInterval = setInterval(_self.updateGPS.bind(_self), 3000);
+
+    //_self.updateGPS();
 }
 
 ClientWatcher.prototype.updateGPS = function(){
+console.log("update gps");
     var _self = this;
     var GPS = require("../GPS");
     var gps = new GPS();
@@ -351,17 +376,19 @@ var dummygps = [
 ];
     gps.getGPSInfo(function(gpsdata) {
         if(gpsdata.latitude == 'NaN') {
-           console.log("latitude is NaN");
-           gpsdata.latitude = dummygps[_self.cnt].lat;
-           return;
+           console.log("latitude is NaNNNNNN");
+           //gpsdata.latitude = dummygps[_self.cnt].lat;
+           gpsdata.latitude = 0.0;
+           //return;
         }
         else {
           gpsdata.latitude = parseFloat(gpsdata.latitude);
         }
         if(gpsdata.longitude == 'NaN') {
           console.log("longitude is NaN");
-          gpsdata.longitude = dummygps[_self.cnt].lng;
-          return;
+          //gpsdata.longitude = dummygps[_self.cnt].lng;
+          gpsdata.longitude = 0.0;
+          //return;
         }
         else {
           gpsdata.longitude = parseFloat(gpsdata.longitude);
@@ -373,19 +400,48 @@ _self.cnt++; _self.cnt %= 5;
           lat: gpsdata.latitude
         }
 
-        if(_self.socketConnected) {
+        if(_self.GPSTrackingStart && _self.socketConnected) {
           console.log("sending gps data");
           _self.socket.emit("gps_trace", data);
         }
+
+        // call update active area for geofence
+        var args = {
+            data: {
+                point: [gpsdata.latitude, gpsdata.longitude],
+                area: Object.keys(_self.areas).map(function(key){ return _self.areas[key]; })
+                //area: _self.areas
+            },
+            headers: {
+                "Content-Type": "application/json"
+            }
+        };
+console.log(args);
+
+        try {
+            _self.geofenceAPIClient.methods.updateActiveArea(args, function (data, response) {
+                console.log(data);
+                //console.log(response);
+                // reset data buffer
+                setTimeout(_self.updateGPS.bind(_self), 3000);
+            });
+        }catch (ex){
+            //_self.reqNotif = true;
+            console.log(ex);
+            setTimeout(_self.updateGPS.bind(_self), 3000);
+        }
+
+
     }, function(err) {
-       console.log(err);
+       console.log(err.stack);
+       setTimeout(_self.updateGPS.bind(_self), 3000);
     });
 }
 
 ClientWatcher.prototype.stopGPSTracking = function() {
     var _self = this;
     _self.GPSTrackingStart = false;
-    clearInterval(_self.GPSTrackingInterval);
+    //clearInterval(_self.GPSTrackingInterval);
 }
 
 ClientWatcher.prototype.addEventLocation = function() {
@@ -418,12 +474,41 @@ ClientWatcher.prototype.addEventLocation = function() {
             _self.ACL_X = [];
             _self.ACL_Y = [];
             _self.ACL_Z = [];
+
+            // fetch area data
+            if(_self.socket)
+              _self.socket.emit("area/fetch");
         });
     }catch (ex){
         //_self.reqNotif = true;
         console.log(ex);
     }
 };
+
+ClientWatcher.prototype._fetchAreaData = function(data) {
+  console.log("Fetching area data");
+  var _self = this;
+  for(var i =0; i< data.length; i++){
+    _self.areas[data[i].area_id] = data[i];
+  }
+  //data.forEach(function(element, index, array){
+  //  _self.areas[element['area_id']] = element;
+  //});
+}
+
+ClientWatcher.prototype._addNewArea = function(area) {
+  console.log("Add area");
+  var _self = this;
+  _self.areas[area['area_id']] = area;
+  console.log(_self.areas);
+}
+
+ClientWatcher.prototype._deleteArea = function(area_id) {
+  console.log("delete area");
+  var _self = this;
+  delete _self.areas[area_id];
+  console.log(_self.areas);
+}
 
 module.exports = ClientWatcher;
 
