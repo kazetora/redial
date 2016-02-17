@@ -104,7 +104,7 @@ ClientWatcher.prototype.connectSocket = function() {
     //});
     _self.socket.on('area/fetch', function(data){
       console.log("Fetching area");
-      console.log(data);
+      //console.log(data);
       _self._fetchAreaData(data);
     });
 
@@ -123,7 +123,7 @@ ClientWatcher.prototype.reconnectSocket = function() {
     var _self = this;
     if(_self.socket)
         _self.socket.removeAllListeners();
-    console.log(_self.WS_SERVER);
+    //console.log(_self.WS_SERVER);
     setTimeout(_self.connectSocket.bind(_self), 3000);
 }
 
@@ -266,7 +266,7 @@ ClientWatcher.prototype.getGPSACL = function() {
                       Z: _self.ACL_Z.mean()
                   }
               }
-              console.log(send_data);
+              //console.log(send_data);
               _self.GPS_ACL.push(send_data);
               _self.addEventLocation(send_data);
         }, function(err) {
@@ -338,11 +338,11 @@ _self.cnt++; _self.cnt %= 5;
                 "Content-Type": "application/json"
             }
         };
-console.log(args);
+//console.log(args);
 
         try {
             _self.geofenceAPIClient.methods.updateActiveArea(args, function (data, response) {
-                console.log(data);
+                //console.log(data);
                 //console.log(response);
                 // reset data buffer
                 setTimeout(_self.updateGPS.bind(_self), 3000);
@@ -422,14 +422,14 @@ ClientWatcher.prototype._addNewArea = function(area) {
   console.log("Add area");
   var _self = this;
   _self.areas[area['area_id']] = area;
-  console.log(_self.areas);
+  //console.log(_self.areas);
 }
 
 ClientWatcher.prototype._deleteArea = function(area_id) {
   console.log("delete area");
   var _self = this;
   delete _self.areas[area_id];
-  console.log(_self.areas);
+  //console.log(_self.areas);
 }
 
 module.exports = ClientWatcher;
