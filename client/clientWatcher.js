@@ -398,8 +398,8 @@ ClientWatcher.prototype.addEventLocation = function() {
             _self.ACL_Z = [];
 
             // fetch area data
-            if(_self.socket)
-              _self.socket.emit("area/fetch");
+            //if(_self.socket)
+            //  _self.socket.emit("area/fetch");
         });
     }catch (ex){
         //_self.reqNotif = true;
