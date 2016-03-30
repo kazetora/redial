@@ -43,7 +43,7 @@ ClientWatcher.prototype.connectSocket = function() {
         "secure": true,
         "transports": [ "websocket" ],
         "try multiple transports": false,
-        "reconnect": false,
+        "reconnection": false,
         "force new connection": true,
         "connect timeout": 10000
     };
@@ -59,7 +59,7 @@ ClientWatcher.prototype.connectSocket = function() {
         console.log("Connected");
         _self.socketConnected = true;
         _self.checkConnection(true);
-        //_self.socket.emit("area/fetch");
+        _self.socket.emit("area/fetch");
         //socket.emit("update_complete");
         //socket.on("update_received", function(){
         //    console.log("update received");
