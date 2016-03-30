@@ -59,7 +59,7 @@ ClientWatcher.prototype.connectSocket = function() {
         console.log("Connected");
         _self.socketConnected = true;
         _self.checkConnection(true);
-        _self.socket.emit("area/fetch");
+        //_self.socket.emit("area/fetch");
         //socket.emit("update_complete");
         //socket.on("update_received", function(){
         //    console.log("update received");
@@ -121,10 +121,13 @@ ClientWatcher.prototype.connectSocket = function() {
 
 ClientWatcher.prototype.reconnectSocket = function() {
     var _self = this;
-    if(_self.socket)
+    if(_self.socket) {
+        _self.socket.disconect();
         _self.socket.removeAllListeners();
+        _self.socket = null;
+    }
     //console.log(_self.WS_SERVER);
-    setTimeout(_self.connectSocket.bind(_self), 3000);
+    setTimeout(_self.connectSocket.bind(_self), 30000);
 }
 
 ClientWatcher.prototype.getInterfaceAddress = function (ifname) {
