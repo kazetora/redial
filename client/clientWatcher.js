@@ -43,7 +43,7 @@ ClientWatcher.prototype.connectSocket = function() {
         "secure": true,
         "transports": [ "websocket" ],
         "try multiple transports": false,
-        "reconnect": false,
+        "reconnection": false,
         "force new connection": true,
         "connect timeout": 10000
     };
@@ -121,10 +121,13 @@ ClientWatcher.prototype.connectSocket = function() {
 
 ClientWatcher.prototype.reconnectSocket = function() {
     var _self = this;
-    if(_self.socket)
+    if(_self.socket) {
+        _self.socket.disconect();
         _self.socket.removeAllListeners();
+        _self.socket = null;
+    }
     //console.log(_self.WS_SERVER);
-    setTimeout(_self.connectSocket.bind(_self), 3000);
+    setTimeout(_self.connectSocket.bind(_self), 30000);
 }
 
 ClientWatcher.prototype.getInterfaceAddress = function (ifname) {

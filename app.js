@@ -17,7 +17,7 @@ if (cluster.isMaster) {
 
     cluster.on('exit', function(worker) {
         console.log("uncaught exception: restarting");
-        cluster.fork();
+        setTimeout(cluster.fork.bind(this), 30000);
     });
 }
 
@@ -35,7 +35,7 @@ else {
 
     setInterval(function() {
         client_watcher.getGPSACL();
-    }, 1000); 
+    }, 1000);
 
     process.on('uncaughtException', function(err){
         console.log(err);
