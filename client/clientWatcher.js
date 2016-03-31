@@ -171,6 +171,7 @@ ClientWatcher.prototype.checkConnection = function(force) {
             _self.updateNodeInfo(ppp0_addr);
         }
     }
+    setTimeout(_self.checkConnection.bind(_self));
 };
 
 ClientWatcher.prototype.checkConnection2 = function(force) {
@@ -278,10 +279,16 @@ ClientWatcher.prototype.getGPSACL = function() {
               }
               console.log(send_data);
               _self.GPS_ACL.push(send_data);
-              _self.addEventLocation(send_data);
+              _self.addEventLocation(send_data, function(){
+                setTimeout(_self.getGPSACL.bind(_self), 1000);
+              });
         }, function(err) {
             console.log(err);
+            setTimeout(_self.getGPSACL.bind(_self), 1000);
         });
+      }
+      else {
+        setTimeout(_self.getGPSACL.bind(_self), 1000);
       }
     });
 };
@@ -349,10 +356,16 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
               }
               //console.log(send_data);
               _self.GPS_ACL.push(send_data);
-              _self.addEventLocation(send_data);
+              _self.addEventLocation(send_data, function(){
+                setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
+              });
         }, function(err) {
             console.log(err.stack);
+            setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
         });
+      }
+      else {
+        setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
       }
     });
 };
@@ -447,7 +460,7 @@ ClientWatcher.prototype.stopGPSTracking = function() {
     //clearInterval(_self.GPSTrackingInterval);
 }
 
-ClientWatcher.prototype.addEventLocation = function() {
+ClientWatcher.prototype.addEventLocation = function(cb) {
 
     var _self = this;
     if(_self.GPS_ACL.length == 0) {
@@ -481,10 +494,12 @@ ClientWatcher.prototype.addEventLocation = function() {
             // fetch area data
             //if(_self.socket)
             //  _self.socket.emit("area/fetch");
+            cb();
         });
     }catch (ex){
         //_self.reqNotif = true;
         console.log(ex);
+        cb();
     }
 };
 
