@@ -29,14 +29,14 @@ GPS.prototype.getGPSInfo = function(onSuccess, onErr) {
   });
 
   serialPort.on('open', function(err) {
-    console.log('serialPort: Port open');
+    //console.log('serialPort: Port open');
   });
 
   serialPort.on('close', function(err) {
     if(err) {
-        console.log(err.stack);
+        //console.log(err.stack);
     }
-    console.log('serialPort: Port close');
+    //console.log('serialPort: Port close');
   });
 
   serialPort.on('data', function(data) {
@@ -46,7 +46,7 @@ GPS.prototype.getGPSInfo = function(onSuccess, onErr) {
       var gps = nmea.parse(data);
       //console.dir(gps);
       if(gps['id'] == 'GPRMC') {
-        console.log('GPRMC');
+        //console.log('GPRMC');
         //console.log(gps);
         onSuccess(gps);
         serialPort.close();

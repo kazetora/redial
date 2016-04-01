@@ -296,6 +296,7 @@ ClientWatcher.prototype.getGPSACL = function() {
               });
         }, function(err) {
             console.log(err);
+            _self._loggingLock = false;
         });
       }
       else {
@@ -382,8 +383,8 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
                 //_self._loggingLock = false;
               });
         }, function(err) {
-            console.log(err.stack);
-            //_self._loggingLock = false;
+            //console.log(err.stack);
+            _self._loggingLock = false;
         });
       }
       else {
@@ -401,7 +402,6 @@ ClientWatcher.prototype.startGPSTracking = function() {
 }
 
 ClientWatcher.prototype.updateGPS = function(){
-console.log("update gps");
     var _self = this;
     var GPS = require("../GPS");
     var gps = new GPS();
@@ -471,7 +471,7 @@ _self.cnt++; _self.cnt %= 5;
 
 
     }, function(err) {
-       console.log(err.stack);
+      // console.log(err.stack);
        setTimeout(_self.updateGPS.bind(_self), 3000);
     });
 }
@@ -485,7 +485,7 @@ ClientWatcher.prototype.stopGPSTracking = function() {
 ClientWatcher.prototype.addEventLocation = function(cb) {
 
     var _self = this;
-    if(_self._stopAPICall || _self.GPS_ACL.length == 0) {
+    if(_self.GPS_ACL.length == 0) {
       return cb();
     }
     var Client = require('node-rest-client').Client;
@@ -512,6 +512,10 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
             _self.ACL_X = [];
             _self.ACL_Y = [];
             _self.ACL_Z = [];
+
+            _self.GYRO_X = [];
+            _self.GYRO_Y =[];
+            _self.GYRO_Z = [];
 
             cb();
         });
