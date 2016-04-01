@@ -29,6 +29,7 @@ this.cnt = 0;
     this.init();
     this.hasGyro = false;
     this._stopAPICall = false;
+    this._loggingLock = false;
 }
 
 ClientWatcher.prototype.init = function() {
@@ -228,7 +229,9 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
 
 ClientWatcher.prototype.getGPSACL = function() {
     var _self = this;
-
+    if(_self._loggingLock)
+      return;
+    _self._loggingLock = true;
     // accel
     var spawn = require('child_process').spawn;
     var accel = spawn('./bin/accel', []);
@@ -246,6 +249,14 @@ ClientWatcher.prototype.getGPSACL = function() {
         _self.ACL_Z.push(parseFloat(acceldata[2]));
 
         if(!_self._stopAPICall && _self.ACL_X.length >= 30) {
+          _self._stopAPICall = true;
+          setTimeout(function(){
+            _self._loggingLock = false;
+          }, 1000);
+
+          setTimeout(function(){
+            _self._stopAPICall = false;
+          }, 30000);
 
           var GPS = require("../GPS");
           var gps = new GPS();
@@ -281,22 +292,23 @@ ClientWatcher.prototype.getGPSACL = function() {
               console.log(send_data);
               _self.GPS_ACL.push(send_data);
               _self.addEventLocation(function(){
-                setTimeout(_self.getGPSACL.bind(_self), 1000);
+                //setTimeout(_self.getGPSACL.bind(_self), 1000);
               });
         }, function(err) {
             console.log(err);
-            setTimeout(_self.getGPSACL.bind(_self), 1000);
         });
       }
       else {
-        setTimeout(_self.getGPSACL.bind(_self), 1000);
+        _self._loggingLock = false;
       }
     });
 };
 
 ClientWatcher.prototype.getGPSACLGyro = function() {
     var _self = this;
-
+    if(_self._loggingLock)
+      return;
+    _self._loggingLock = true;
     // accel
     var spawn = require('child_process').spawn;
     var accel = spawn('/usr/bin/python', ['./bin/accel-gyro.py']);
@@ -318,6 +330,14 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
         _self.GYRO_Z.push(aclgyro.gyro.z);
 
         if(!_self._stopAPICall && _self.ACL_X.length >= 30) {
+          _self._stopAPICall = true;
+          setTimeout(function(){
+            _self._loggingLock = false;
+          }, 1000);
+
+          setTimeout(function(){
+            _self._stopAPICall = false;
+          }, 30000);
 
           var GPS = require("../GPS");
           var gps = new GPS();
@@ -358,15 +378,16 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
               //console.log(send_data);
               _self.GPS_ACL.push(send_data);
               _self.addEventLocation(function(){
-                setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
+                //setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
+                //_self._loggingLock = false;
               });
         }, function(err) {
             console.log(err.stack);
-            setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
+            //_self._loggingLock = false;
         });
       }
       else {
-        setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
+        _self._loggingLock = false;
       }
     });
 };
@@ -492,15 +513,6 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
             _self.ACL_Y = [];
             _self.ACL_Z = [];
 
-            // fetch area data
-            //if(_self.socket)
-            //  _self.socket.emit("area/fetch");
-            if(!_self._stopAPICall) {
-              _self._stopAPICall = true;
-              setTimeout(function(){
-                _self._stopAPICall = false;
-              }, 30000);
-            }
             cb();
         });
     }catch (ex){
