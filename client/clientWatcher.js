@@ -28,6 +28,7 @@ this.cnt = 0;
     this.areas = {};
     this.init();
     this.hasGyro = false;
+    this._stopAPICall = false;
 }
 
 ClientWatcher.prototype.init = function() {
@@ -244,7 +245,7 @@ ClientWatcher.prototype.getGPSACL = function() {
         _self.ACL_Y.push(parseFloat(acceldata[1]));
         _self.ACL_Z.push(parseFloat(acceldata[2]));
 
-        if(_self.ACL_X.length >= 30) {
+        if(!_self._stopAPICall && _self.ACL_X.length >= 30) {
 
           var GPS = require("../GPS");
           var gps = new GPS();
@@ -279,7 +280,7 @@ ClientWatcher.prototype.getGPSACL = function() {
               }
               console.log(send_data);
               _self.GPS_ACL.push(send_data);
-              _self.addEventLocation(send_data, function(){
+              _self.addEventLocation(function(){
                 setTimeout(_self.getGPSACL.bind(_self), 1000);
               });
         }, function(err) {
@@ -316,7 +317,7 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
         _self.GYRO_Y.push(aclgyro.gyro.y);
         _self.GYRO_Z.push(aclgyro.gyro.z);
 
-        if(_self.ACL_X.length >= 30) {
+        if(!_self._stopAPICall && _self.ACL_X.length >= 30) {
 
           var GPS = require("../GPS");
           var gps = new GPS();
@@ -356,7 +357,7 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
               }
               //console.log(send_data);
               _self.GPS_ACL.push(send_data);
-              _self.addEventLocation(send_data, function(){
+              _self.addEventLocation(function(){
                 setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
               });
         }, function(err) {
@@ -463,8 +464,8 @@ ClientWatcher.prototype.stopGPSTracking = function() {
 ClientWatcher.prototype.addEventLocation = function(cb) {
 
     var _self = this;
-    if(_self.GPS_ACL.length == 0) {
-      return;
+    if(_self._stopAPICall || _self.GPS_ACL.length == 0) {
+      return cb();
     }
     var Client = require('node-rest-client').Client;
     var client = new Client();
@@ -494,6 +495,12 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
             // fetch area data
             //if(_self.socket)
             //  _self.socket.emit("area/fetch");
+            if(!_self._stopAPICall) {
+              _self._stopAPICall = true;
+              setTimeout(function(){
+                _self._stopAPICall = false;
+              }, 30000);
+            }
             cb();
         });
     }catch (ex){
