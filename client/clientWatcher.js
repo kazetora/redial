@@ -18,16 +18,26 @@ function ClientWatcher(nodeId, server, port) {
     this.ACL_X = [];
     this.ACL_Y = [];
     this.ACL_Z = [];
+    this.GYRO_X = [];
+    this.GYRO_Y = [];
+    this.GYRO_Z = [];
     this.GPSTrackingStart = false;
     this.GPSTrackingInterval = null;
     this.geofenceAPIClient = null;
 this.cnt = 0;
     this.areas = {};
     this.init();
+    this.hasGyro = false;
+    this._stopAPICall = false;
+    this._loggingLock = false;
 }
 
 ClientWatcher.prototype.init = function() {
     var _self = this;
+    // check if this node has gyro sensor
+    if(_self.nodeId.indexOf("gateway") === 0) {
+      _self.hasGyro = true;
+    }
     _self.connectSocket();
     _self.checkConnection(true);
     var APIClient = require('node-rest-client').Client;
@@ -163,6 +173,7 @@ ClientWatcher.prototype.checkConnection = function(force) {
             _self.updateNodeInfo(ppp0_addr);
         }
     }
+    setTimeout(_self.checkConnection.bind(_self));
 };
 
 ClientWatcher.prototype.checkConnection2 = function(force) {
@@ -218,7 +229,9 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
 
 ClientWatcher.prototype.getGPSACL = function() {
     var _self = this;
-
+    if(_self._loggingLock)
+      return;
+    _self._loggingLock = true;
     // accel
     var spawn = require('child_process').spawn;
     var accel = spawn('./bin/accel', []);
@@ -229,14 +242,21 @@ ClientWatcher.prototype.getGPSACL = function() {
         //console.log(data);
 
         var acceldata = data.match(/[0-9\.\-]+/g);
-        //console.log(acceldata);
+      //console.log(acceldata);
 
         _self.ACL_X.push(parseFloat(acceldata[0]));
         _self.ACL_Y.push(parseFloat(acceldata[1]));
         _self.ACL_Z.push(parseFloat(acceldata[2]));
 
-        if(_self.ACL_X.length >= 30) {
+        if(!_self._stopAPICall && _self.ACL_X.length >= 30) {
+          _self._stopAPICall = true;
+          setTimeout(function(){
+            _self._loggingLock = false;
+          }, 1000);
 
+          setTimeout(function(){
+            _self._stopAPICall = false;
+          }, 30000);
 
           var GPS = require("../GPS");
           var gps = new GPS();
@@ -269,12 +289,105 @@ ClientWatcher.prototype.getGPSACL = function() {
                       Z: _self.ACL_Z.mean()
                   }
               }
+              console.log(send_data);
+              _self.GPS_ACL.push(send_data);
+              _self.addEventLocation(function(){
+                //setTimeout(_self.getGPSACL.bind(_self), 1000);
+              });
+        }, function(err) {
+            console.log(err);
+            _self._loggingLock = false;
+        });
+      }
+      else {
+        _self._loggingLock = false;
+      }
+    });
+};
+
+ClientWatcher.prototype.getGPSACLGyro = function() {
+    var _self = this;
+    if(_self._loggingLock)
+      return;
+    _self._loggingLock = true;
+    setTimeout(function(){
+      _self._loggingLock = false;
+    }, 1000);
+    // accel
+    var spawn = require('child_process').spawn;
+    var accel = spawn('/usr/bin/python', ['./bin/accel-gyro.py']);
+
+    accel.stdout.on('data', function(data){
+
+        data = data.toString();
+        //console.log(data);
+
+        var aclgyro = JSON.parse(data);
+      //console.log(acceldata);
+
+        _self.ACL_X.push(aclgyro.accel.x);
+        _self.ACL_Y.push(aclgyro.accel.y);
+        _self.ACL_Z.push(aclgyro.accel.z);
+
+        _self.GYRO_X.push(aclgyro.gyro.x);
+        _self.GYRO_Y.push(aclgyro.gyro.y);
+        _self.GYRO_Z.push(aclgyro.gyro.z);
+
+        if(!_self._stopAPICall && _self.ACL_X.length >= 30) {
+          _self._stopAPICall = true;
+          setTimeout(function(){
+            _self._stopAPICall = false;
+          }, 30000);
+
+          var GPS = require("../GPS");
+          var gps = new GPS();
+
+          gps.getGPSInfo(function(gpsdata) {
+              if(gpsdata.latitude == 'NaN') {
+                 console.log("latitude is NaN");
+                 gpsdata.latitude = 0.0;
+                 //return;
+              }
+              else {
+                gpsdata.latitude = parseFloat(gpsdata.latitude);
+              }
+              if(gpsdata.longitude == 'NaN') {
+                console.log("longitude is NaN");
+                gpsdata.longitude = 0.0;
+                //return;
+              }
+              else {
+                gpsdata.longitude = parseFloat(gpsdata.longitude);
+              }
+              var send_data = {
+                  gps: {
+                      latitude: gpsdata.latitude,
+                      longitude: gpsdata.longitude
+                  },
+                  accel: {
+                      X: _self.ACL_X.mean(),
+                      Y: _self.ACL_Y.mean(),
+                      Z: _self.ACL_Z.mean()
+                  },
+                  gryo : {
+                      X: _self.GYRO_X.mean(),
+                      Y: _self.GYRO_Y.mean(),
+                      Z: _self.GYRO_Z.mean()
+                  }
+              }
               //console.log(send_data);
               _self.GPS_ACL.push(send_data);
-              _self.addEventLocation(send_data);
+              _self.addEventLocation(function(){
+                //setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
+                //_self._loggingLock = false;
+              });
         }, function(err) {
-            console.log(err.stack);
+            //console.log(err.stack);
+            _self._loggingLock = false;
         });
+      }
+      else {
+        _self._loggingLock = false;
       }
     });
 };
@@ -288,7 +401,6 @@ ClientWatcher.prototype.startGPSTracking = function() {
 }
 
 ClientWatcher.prototype.updateGPS = function(){
-console.log("update gps");
     var _self = this;
     var GPS = require("../GPS");
     var gps = new GPS();
@@ -358,7 +470,7 @@ _self.cnt++; _self.cnt %= 5;
 
 
     }, function(err) {
-       console.log(err.stack);
+      // console.log(err.stack);
        setTimeout(_self.updateGPS.bind(_self), 3000);
     });
 }
@@ -369,11 +481,11 @@ ClientWatcher.prototype.stopGPSTracking = function() {
     //clearInterval(_self.GPSTrackingInterval);
 }
 
-ClientWatcher.prototype.addEventLocation = function() {
+ClientWatcher.prototype.addEventLocation = function(cb) {
 
     var _self = this;
     if(_self.GPS_ACL.length == 0) {
-      return;
+      return cb();
     }
     var Client = require('node-rest-client').Client;
     var client = new Client();
@@ -400,13 +512,16 @@ ClientWatcher.prototype.addEventLocation = function() {
             _self.ACL_Y = [];
             _self.ACL_Z = [];
 
-            // fetch area data
-            //if(_self.socket)
-            //  _self.socket.emit("area/fetch");
+            _self.GYRO_X = [];
+            _self.GYRO_Y =[];
+            _self.GYRO_Z = [];
+
+            cb();
         });
     }catch (ex){
         //_self.reqNotif = true;
         console.log(ex);
+        cb();
     }
 };
 

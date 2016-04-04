@@ -29,12 +29,15 @@ else {
 
     var interval = 3000;
 
-    setInterval(function() {
-        client_watcher.checkConnection(false);
-    }, interval);
+    //setInterval(function() {
+    client_watcher.checkConnection(false);
+    //}, interval);
 
     setInterval(function() {
-        client_watcher.getGPSACL();
+      if(nodeconf.name.indexOf("gateway") === 0)
+          client_watcher.getGPSACLGyro();
+      else
+          client_watcher.getGPSACL();
     }, 1000);
 
     process.on('uncaughtException', function(err){
