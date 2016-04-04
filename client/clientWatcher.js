@@ -232,6 +232,10 @@ ClientWatcher.prototype.getGPSACL = function() {
     if(_self._loggingLock)
       return;
     _self._loggingLock = true;
+    setTimeout(function(){
+      _self._loggingLock = false;
+    }, 1000);
+    
     // accel
     var spawn = require('child_process').spawn;
     var accel = spawn('./bin/accel', []);
@@ -250,9 +254,6 @@ ClientWatcher.prototype.getGPSACL = function() {
 
         if(!_self._stopAPICall && _self.ACL_X.length >= 30) {
           _self._stopAPICall = true;
-          setTimeout(function(){
-            _self._loggingLock = false;
-          }, 1000);
 
           setTimeout(function(){
             _self._stopAPICall = false;
