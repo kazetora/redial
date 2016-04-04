@@ -310,6 +310,9 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
     if(_self._loggingLock)
       return;
     _self._loggingLock = true;
+    setTimeout(function(){
+      _self._loggingLock = false;
+    }, 1000);
     // accel
     var spawn = require('child_process').spawn;
     var accel = spawn('/usr/bin/python', ['./bin/accel-gyro.py']);
@@ -332,10 +335,6 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
 
         if(!_self._stopAPICall && _self.ACL_X.length >= 30) {
           _self._stopAPICall = true;
-          setTimeout(function(){
-            _self._loggingLock = false;
-          }, 1000);
-
           setTimeout(function(){
             _self._stopAPICall = false;
           }, 30000);
