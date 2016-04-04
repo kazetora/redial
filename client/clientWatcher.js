@@ -290,8 +290,15 @@ ClientWatcher.prototype.getGPSACL = function() {
                       Z: _self.ACL_Z.mean()
                   }
               }
-              console.log(send_data);
+              //console.log(send_data);
               _self.GPS_ACL.push(send_data);
+              _self.ACL_X = [];
+              _self.ACL_Y = [];
+              _self.ACL_Z = [];
+
+              _self.GYRO_X = [];
+              _self.GYRO_Y =[];
+              _self.GYRO_Z = [];
               _self.addEventLocation(function(){
                 //setTimeout(_self.getGPSACL.bind(_self), 1000);
               });
@@ -378,6 +385,13 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
               }
               //console.log(send_data);
               _self.GPS_ACL.push(send_data);
+              _self.ACL_X = [];
+              _self.ACL_Y = [];
+              _self.ACL_Z = [];
+
+              _self.GYRO_X = [];
+              _self.GYRO_Y =[];
+              _self.GYRO_Z = [];
               _self.addEventLocation(function(){
                 //setTimeout(_self.getGPSACLGyro.bind(_self), 1000);
                 //_self._loggingLock = false;
@@ -509,13 +523,6 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
             //console.log(response);
             // reset data buffer
             _self.GPS_ACL = [];
-            _self.ACL_X = [];
-            _self.ACL_Y = [];
-            _self.ACL_Z = [];
-
-            _self.GYRO_X = [];
-            _self.GYRO_Y =[];
-            _self.GYRO_Z = [];
 
             cb();
         });
