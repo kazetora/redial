@@ -229,13 +229,13 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
 
 ClientWatcher.prototype.getGPSACL = function() {
     var _self = this;
-    if(_self._loggingLock)
-      return;
-    _self._loggingLock = true;
-    setTimeout(function(){
-      _self._loggingLock = false;
-    }, 1000);
-    
+    // if(_self._loggingLock)
+    //   return;
+    // _self._loggingLock = true;
+    // setTimeout(function(){
+    //   _self._loggingLock = false;
+    // }, 1000);
+
     // accel
     var spawn = require('child_process').spawn;
     var accel = spawn('./bin/accel', []);
@@ -297,23 +297,23 @@ ClientWatcher.prototype.getGPSACL = function() {
               });
         }, function(err) {
             console.log(err);
-            _self._loggingLock = false;
+            // _self._loggingLock = false;
         });
       }
       else {
-        _self._loggingLock = false;
+        // _self._loggingLock = false;
       }
     });
 };
 
 ClientWatcher.prototype.getGPSACLGyro = function() {
     var _self = this;
-    if(_self._loggingLock)
-      return;
-    _self._loggingLock = true;
-    setTimeout(function(){
-      _self._loggingLock = false;
-    }, 1000);
+    // if(_self._loggingLock)
+    //   return;
+    // _self._loggingLock = true;
+    // setTimeout(function(){
+    //   _self._loggingLock = false;
+    // }, 1000);
     // accel
     var spawn = require('child_process').spawn;
     var accel = spawn('/usr/bin/python', ['./bin/accel-gyro.py']);
@@ -384,11 +384,11 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
               });
         }, function(err) {
             //console.log(err.stack);
-            _self._loggingLock = false;
+            // _self._loggingLock = false;
         });
       }
       else {
-        _self._loggingLock = false;
+        // _self._loggingLock = false;
       }
     });
 };
