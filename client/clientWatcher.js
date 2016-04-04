@@ -23,17 +23,24 @@ function ClientWatcher(nodeId, server, port) {
     this.GYRO_Z = [];
     this.GPSTrackingStart = false;
     this.GPSTrackingInterval = null;
-    this.geofenceAPIClient = null;
+    //this.geofenceAPIClient = null;
 this.cnt = 0;
     this.areas = {};
     this.init();
     this.hasGyro = false;
     this._stopAPICall = false;
     this._loggingLock = false;
+    this._restClient = null;
 }
 
 ClientWatcher.prototype.init = function() {
     var _self = this;
+
+    var Client = require('node-rest-client').Client;
+    _self.restClient = new Client();
+    _self.restClient.registerMethod("addEvents", _self.API_SERVER + "events/addEvent", "POST");
+    _self.restClient.registerMethod("updateNodeInfo", _self.API_SERVER + "nodes/updateNodeIP", "POST");
+    _self.restClient.registerMethod("updateActiveArea", _self.geofenceServer + "geofence/updateActiveArea", "POST");
     // check if this node has gyro sensor
     if(_self.nodeId.indexOf("gateway") === 0) {
       _self.hasGyro = true;
@@ -41,8 +48,8 @@ ClientWatcher.prototype.init = function() {
     _self.connectSocket();
     _self.checkConnection(true);
     var APIClient = require('node-rest-client').Client;
-    _self.geofenceAPIClient = new APIClient();
-    _self.geofenceAPIClient.registerMethod("updateActiveArea", _self.geofenceServer + "geofence/updateActiveArea", "POST");
+    //_self.geofenceAPIClient = new APIClient();
+    //_self.geofenceAPIClient.registerMethod("updateActiveArea", _self.geofenceServer + "geofence/updateActiveArea", "POST");
     setTimeout(_self.updateGPS.bind(_self), 5000);
 };
 
@@ -195,8 +202,8 @@ ClientWatcher.prototype.checkConnection2 = function(force) {
 
 ClientWatcher.prototype.updateNodeInfo = function(addr) {
     var _self = this;
-    var Client = require('node-rest-client').Client;
-    var client = new Client();
+    //var Client = require('node-rest-client').Client;
+    //var client = new Client();
     var args = {
         data: {
             id: _self.nodeId,
@@ -208,8 +215,8 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
     };
 
     try {
-        client.registerMethod("updateNodeInfo", _self.API_SERVER + "nodes/updateNodeIP", "POST");
-        client.methods.updateNodeInfo(args, function (data, response) {
+        //client.registerMethod("updateNodeInfo", _self.API_SERVER + "nodes/updateNodeIP", "POST");
+        _self.restClient.methods.updateNodeInfo(args, function (data, response) {
             //console.dir(data);
             //console.log(response);
             if(_self.socketConnected) {
@@ -471,7 +478,7 @@ _self.cnt++; _self.cnt %= 5;
 //console.log(args);
 
         try {
-            _self.geofenceAPIClient.methods.updateActiveArea(args, function (data, response) {
+            _self.restClient.methods.updateActiveArea(args, function (data, response) {
                 //console.log(data);
                 //console.log(response);
                 // reset data buffer
@@ -502,8 +509,8 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
     if(_self.GPS_ACL.length == 0) {
       return cb();
     }
-    var Client = require('node-rest-client').Client;
-    var client = new Client();
+    // var Client = require('node-rest-client').Client;
+    // var client = new Client();
 
     var args = {
         data: {
@@ -517,8 +524,8 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
     };
 
     try {
-        client.registerMethod("addEvents", _self.API_SERVER + "events/addEvent", "POST");
-        client.methods.addEvents(args, function (data, response) {
+          //client.registerMethod("addEvents", _self.API_SERVER + "events/addEvent", "POST");
+        _self.restClient.methods.addEvents(args, function (data, response) {
             //console.dir(data);
             //console.log(response);
             // reset data buffer
