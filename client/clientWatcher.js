@@ -271,7 +271,7 @@ ClientWatcher.prototype.getGPSACL = function() {
 
           gps.getGPSInfo(function(gpsdata) {
               if(gpsdata.latitude == 'NaN') {
-                 console.log("latitude is NaN");
+                //  console.log("latitude is NaN");
                  gpsdata.latitude = 0.0;
                  //return;
               }
@@ -279,7 +279,7 @@ ClientWatcher.prototype.getGPSACL = function() {
                 gpsdata.latitude = parseFloat(gpsdata.latitude);
               }
               if(gpsdata.longitude == 'NaN') {
-                console.log("longitude is NaN");
+                // console.log("longitude is NaN");
                 gpsdata.longitude = 0.0;
                 //return;
               }
@@ -359,7 +359,7 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
 
           gps.getGPSInfo(function(gpsdata) {
               if(gpsdata.latitude == 'NaN') {
-                 console.log("latitude is NaN");
+                //  console.log("latitude is NaN");
                  gpsdata.latitude = 0.0;
                  //return;
               }
@@ -367,7 +367,7 @@ ClientWatcher.prototype.getGPSACLGyro = function() {
                 gpsdata.latitude = parseFloat(gpsdata.latitude);
               }
               if(gpsdata.longitude == 'NaN') {
-                console.log("longitude is NaN");
+                // console.log("longitude is NaN");
                 gpsdata.longitude = 0.0;
                 //return;
               }
@@ -435,7 +435,7 @@ var dummygps = [
 ];
     gps.getGPSInfo(function(gpsdata) {
         if(gpsdata.latitude == 'NaN') {
-           console.log("latitude is NaNNNNNN");
+          //  console.log("latitude is NaNNNNNN");
            //gpsdata.latitude = dummygps[_self.cnt].lat;
            gpsdata.latitude = 0.0;
            //return;
@@ -444,7 +444,7 @@ var dummygps = [
           gpsdata.latitude = parseFloat(gpsdata.latitude);
         }
         if(gpsdata.longitude == 'NaN') {
-          console.log("longitude is NaN");
+          // console.log("longitude is NaN");
           //gpsdata.longitude = dummygps[_self.cnt].lng;
           gpsdata.longitude = 0.0;
           //return;
