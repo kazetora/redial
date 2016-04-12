@@ -53,7 +53,10 @@ GPS.prototype.getGPSInfo = function(onSuccess, onErr) {
       }
     } catch(e) {
       //console.log(e);
-      serialPort.close();
+      try{
+        serialPort.close();
+      } catch(ex) {
+      }
       onErr(e);
     }
   });
@@ -73,4 +76,3 @@ var test = function() {
 if(require.main === module) {
     test();
 }
-
