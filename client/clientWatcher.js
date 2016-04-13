@@ -530,7 +530,10 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
             //console.log(response);
             // reset data buffer
             _self.GPS_ACL = [];
-
+            var area_cnt = Object.keys(_self.areas).map(function(key){ return _self.areas[key]; }).length;
+            if(area_cnt <= 0 ) {
+              _self.socket.emit("area/fetch");
+            }
             cb();
         });
     }catch (ex){
