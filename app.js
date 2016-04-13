@@ -17,7 +17,9 @@ if (cluster.isMaster) {
 
     cluster.on('exit', function(worker) {
         console.log("uncaught exception: restarting");
-        setTimeout(cluster.fork.bind(this), 30000);
+        setTimeout(function() {
+           cluster.fork();
+        }, 3000);
     });
 }
 
@@ -29,9 +31,9 @@ else {
 
     var interval = 3000;
 
-    //setInterval(function() {
-    client_watcher.checkConnection(false);
-    //}, interval);
+    setInterval(function() {
+       client_watcher.checkConnection(false);
+    }, interval);
 
     setInterval(function() {
       if(nodeconf.name.indexOf("gateway") === 0)
