@@ -175,12 +175,12 @@ ClientWatcher.prototype.checkConnection = function(force) {
         cmd.unref();
     }
     else {
-        if(force || _self.dialing){
+        if(force || _self.dialing || _self.reqNotif){
             _self.dialing = false;
             _self.updateNodeInfo(ppp0_addr);
         }
     }
-    setTimeout(_self.checkConnection.bind(_self));
+    //setTimeout(_self.checkConnection.bind(_self), 3000);
 };
 
 ClientWatcher.prototype.checkConnection2 = function(force) {
@@ -211,6 +211,12 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
         },
         headers: {
             "Content-Type": "application/json"
+        },
+        requestConfig: {
+            timeout: 10000
+        },
+        responseConfig: {
+            timeout: 10000
         }
     };
 
@@ -225,7 +231,8 @@ ClientWatcher.prototype.updateNodeInfo = function(addr) {
                 _self.socket.emit("update_complete");
             }
             else {
-                console.log("Exception caught. Require notification later");
+                _self.reconnectSocket();
+                //console.log("Exception caught. Require notification later");
                 _self.reqNotif = true;
             }
         });
@@ -473,7 +480,14 @@ _self.cnt++; _self.cnt %= 5;
             },
             headers: {
                 "Content-Type": "application/json"
+            },
+            requestConfig: {
+                timeout: 10000
+            },
+            responseConfig: {
+                timeout: 10000
             }
+
         };
 //console.log(args);
 
@@ -520,6 +534,12 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
         },
         headers: {
             "Content-Type": "application/json"
+        },
+        requestConfig: {
+            timeout: 10000
+        },
+        responseConfig: {
+            timeout: 10000
         }
     };
 
@@ -530,7 +550,10 @@ ClientWatcher.prototype.addEventLocation = function(cb) {
             //console.log(response);
             // reset data buffer
             _self.GPS_ACL = [];
-
+            var area_cnt = Object.keys(_self.areas).map(function(key){ return _self.areas[key]; }).length;
+            if(area_cnt <= 0 ) {
+              _self.socket.emit("area/fetch");
+            }
             cb();
         });
     }catch (ex){
