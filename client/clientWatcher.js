@@ -139,7 +139,7 @@ ClientWatcher.prototype.connectSocket = function() {
 ClientWatcher.prototype.reconnectSocket = function() {
     var _self = this;
     if(_self.socket) {
-        _self.socket.disconect();
+        _self.socket.disconnect();
         _self.socket.removeAllListeners();
         _self.socket = null;
     }
